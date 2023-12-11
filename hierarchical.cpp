@@ -1,150 +1,122 @@
-#include <bits/stdc++.h>
+#include<bits/stdc++.h>
 using namespace std;
-int op = 1;
-ofstream fwtr("Finaloutput.csv", ios::out);
-string algomerative(string input)
-{
-    map<string, map<string, int>> dm;
-    fstream file(input, ios::in);
-    string line;
-    getline(file, line);
-    int pt = 0;
-    stringstream st(line);
-    int i = 0;
-    string point;
-    vector<string> points;
-    while (getline(st, point, ','))
-    {
-        if (i == 0)
-        {
-            i++;
-            continue;
-        }
-        points.push_back(point);
-    }
-    while (getline(file, line))
-    {
-        stringstream str(line);
-        getline(str, point, ',');
-        string dist;
-        int idx = 0;
-        while (getline(str, dist, ','))
-        {
-            if (dist.length() != 0)
-                dm[point][points[idx]] = stoi(dist);
-            idx++;
-        }
-    }
-    string pt1, pt2;
-    int min_dist = INT_MAX;
-    for (auto p : dm)
-    {
-        for (auto pp : p.second)
-        {
-            string p1 = p.first, p2 = pp.first;
-            int dist = pp.second;
-            if (p1 != p2 && dist < min_dist)
-            {
-                pt1 = p1;
-                pt2 = p2;
-                min_dist = dist;
+
+void mergeClusters(map<string , map<string,int>   > &matrix){
+
+    if(matrix.size()==1) return;
+    int mini = INT_MAX;
+    string from, to;
+
+    for(auto it: matrix){
+        
+        for(auto itr: it.second)
+            if(itr.second < mini){
+                mini = itr.second;
+                from = it.first;
+                to = itr.first;
             }
+    }
+
+    cout<<"merging "<<from<<" and "<<to<<" as their distance is "<<mini<<" which is minimum:\n";
+
+    for(auto it: matrix){
+        if(it.first==from ){
+
+            for(auto itr: it.second){
+                matrix[it.first][itr.first] = min(itr.second, matrix[to][itr.first]); 
+            }
+
+
         }
     }
-    cout << "Clusters Choosen : " << pt1 << " " << pt2 << endl;
-    string up, down;
-    if (pt1[0] > pt2[0])
-    {
-        up = pt2;
-        down = pt1;
+
+    //deleting to
+    matrix.erase(to);
+    for(auto &it: matrix){
+       it.second.erase(to);
     }
-    else
-    {
-        up = pt1;
-        down = pt2;
-    }
-    string newPt = down + up;
-    for (auto p : dm)
-    {
-        point = p.first;
-        if (point[0] > newPt[0])
-        {
-            dm[point][newPt] = min(dm[point][up], dm[point][down]);
+
+
+    map<string, map<string,int>> newMatrix;
+
+    string newname = from+to;
+    for(auto &it: matrix){
+        
+        map<string,int> row;
+
+        for(auto &itr: it.second){
+            if(itr.first==from)
+                row[newname] = itr.second;
+            else row[itr.first] = itr.second;
+        }
+
+        if(it.first==from){
+            newMatrix[newname] = row;
+        }else{
+            newMatrix[it.first] = row;
         }
     }
-    for (auto p : dm[down])
-    {
-        point = p.first;
-        int d1 = p.second;
-        if (point[0] < up[0])
-            d1 = min(d1, dm[up][point]);
-        else
-            d1 = min(d1, dm[point][up]);
-        dm[newPt][point] = d1;
-    }
-    for (auto p : dm)
-    {
-        point = p.first;
-        auto mtemp = p.second;
-        if (point[0] >= up[0])
-        {
-            int d1 = dm[point][up];
-            if (down[0] > point[0])
-                d1 = min(d1, dm[down][point]);
-            else
-                d1 = min(d1, dm[point][down]);
-            dm[point][newPt] = d1;
-            dm[point].erase(up);
-            if (point[0] >= down[0])
-                dm[point].erase(down);
+    bool initial = true;
+    cout<<"    ";
+    for(auto it: newMatrix){
+        if(initial){
+            for(auto name : it.second){
+                cout<<name.first<<"   ";
+                break;
+            }
+            initial = false;
         }
+        cout<<it.first<<"   ";
     }
-    dm.erase(up);
-    dm.erase(down);
-    string output = "output" + to_string(op++) + ".csv";
-    ofstream fw(output, ios::out);
-    fw << ",";
-    for (auto p : dm)
-    {
-        fw << p.first << ",";
-    }
-    fw << "\n";
-    for (auto p : dm)
-    {
-        fw << p.first << ",";
-        for (auto pp : p.second)
-        {
-            fw << pp.second << ",";
+    cout<<endl;
+    for(auto it: newMatrix){
+        cout<<it.first<<"   ";
+        for(auto itr: it.second){
+            cout<<itr.second<<"   ";
         }
-        fw << "\n";
+        cout<<endl;
     }
-    fw.close();
-    fwtr << down << " & " << up << "\n";
-    return output;
+
+    matrix.clear();
+    mergeClusters(newMatrix);
+
 }
-int main()
-{
-    string input = "input.csv";
-    fstream file1(input, ios::in);
-    string line;
-    getline(file1, line);
-    int pt = 0;
-    stringstream st(line);
-    int j = 0, len = 0;
-    string point;
-    while (getline(st, point, ','))
-    {
-        if (j == 0)
-        {
-            j++;
-            continue;
+int main() {
+
+    ifstream fin("input.csv");
+
+    string line, word;
+
+    map<string , map<string,int>   > matrix;
+
+
+
+    getline(fin, line);
+    stringstream ss(line);
+    getline(ss,word,',');
+    vector<string> attributes;
+    while(getline(ss, word,',')){
+        attributes.push_back(word);
+    }
+    int row=0;
+    while(getline(fin, line)){
+
+        stringstream stss(line);
+        getline(stss, word,',');
+        int col=0;
+        while (getline(stss, word,',')){
+            matrix[attributes[row]][attributes[col]] = stoi(word);
+            col++;
         }
-        len++;
+        row++;
     }
-    for (int i = 1; i <= len - 2; i++)
-    {
-        string output = algomerative(input);
-        input = output;
+
+    for(auto it: matrix){
+        cout<<it.first<<"-"<<endl;
+        for(auto itr: it.second)
+            cout<<itr.first<<" "<<itr.second<<endl;
     }
+    mergeClusters(matrix);
+    fin.close();
     return 0;
 }
